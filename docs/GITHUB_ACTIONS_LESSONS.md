@@ -84,7 +84,8 @@ New ideas:
 
 ## Lesson 4: Inputs, outputs and artifacts (`04-build-artifact.yml`)
 
-This one only runs **manually**: go to **Actions → 04 - Build & convert → Run workflow**,
+This one only runs **manually**. The file must be on the default branch (`main`)
+for the button to appear. Go to **Actions → 04 - Build & convert → Run workflow**,
 enter `37`, choose `f`, and run it.
 
 Then look at:
@@ -105,6 +106,11 @@ inject shell commands.
 - YAML is indentation-sensitive. Use spaces, never tabs.
 - A workflow file must be on the branch you push to, in `.github/workflows/`, with a `.yml` or `.yaml` extension.
 - Check workflow syntax locally with [actionlint](https://github.com/rhysd/actionlint).
+- **"My workflow didn't run!"** Check its filters. Lesson 3 ignores pushes that
+  only change `**.md` files, so pushing just this guide won't trigger it. That's intended.
+- **No "Run workflow" button?** `workflow_dispatch` (manual runs, used by
+  lessons 1 and 4) only shows up once the workflow file exists on the repo's
+  **default branch** (`main`). Merge your branch into `main` first.
 
 ## Where to go next
 
