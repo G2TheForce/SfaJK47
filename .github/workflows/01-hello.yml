@@ -1,0 +1,41 @@
+# LESSON 1: your first workflow.
+# A workflow is a YAML file in .github/workflows/. GitHub runs it when one of its
+# triggers ("on:") happens.
+
+name: 01 - Hello Actions
+
+# Triggers: run on every push to any branch, and allow a manual run from the
+# Actions tab ("Run workflow" button) thanks to workflow_dispatch.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  # A job is a set of steps that run on one fresh virtual machine (a "runner").
+  say-hello:
+    runs-on: ubuntu-latest
+    steps:
+      # A step with "run:" executes shell commands.
+      - name: Say hello
+        run: echo "Hello, GitHub Actions!"
+
+      # ${{ ... }} is an expression. "github" and "runner" are contexts:
+      # read-only info about the event and the machine.
+      - name: Show some context
+        run: |
+          echo "Triggered by:  ${{ github.event_name }}"
+          echo "Branch/ref:    ${{ github.ref_name }}"
+          echo "Commit:        ${{ github.sha }}"
+          echo "Pushed by:     ${{ github.actor }}"
+          echo "Runner OS:     ${{ runner.os }}"
+
+      # The runner starts EMPTY: your code is not there until you check it out.
+      - name: Prove the repo is not checked out yet
+        run: ls -la
+
+      # A step with "uses:" runs a reusable action. actions/checkout clones the repo.
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Now the files are here
+        run: ls -la
