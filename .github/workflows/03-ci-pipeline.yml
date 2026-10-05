@@ -1,0 +1,56 @@
+# LESSON 3: a fuller CI pipeline.
+# New concepts:
+#   - multiple jobs that run in parallel
+#   - "needs:" to order jobs (test only after lint passes)
+#   - a matrix to test many Python versions / operating systems at once
+#   - dependency caching to make runs faster
+#   - branch filters and concurrency
+
+name: 03 - CI pipeline
+
+on:
+  push:
+    branches: ["main", "claude/**"]   # only these branches (glob patterns allowed)
+    paths-ignore: ["**.md"]          # skip runs when only docs change
+  pull_request:
+
+# If you push twice quickly, cancel the older run for the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip                  # cache downloaded packages between runs
+          cache-dependency-path: pyproject.toml
+      - run: pip install ruff
+      - name: Lint
+        run: ruff check .
+      - name: Check formatting
+        run: ruff format --check .
+
+  test:
+    needs: lint                       # wait for lint to succeed first
+    # The matrix creates one job per combination: 3 versions x 2 OSes = 6 jobs.
+    strategy:
+      fail-fast: false                # keep the other jobs running if one fails
+      matrix:
+        python-version: ["3.10", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: test (py${{ matrix.python-version }}, ${{ matrix.os }})
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: pytest -v
