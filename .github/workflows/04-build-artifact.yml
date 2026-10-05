@@ -1,0 +1,81 @@
+# LESSON 4: manual runs with inputs, outputs between steps, and artifacts.
+# Run it from the Actions tab: pick "04 - Build & convert" -> "Run workflow",
+# type a temperature, choose a unit, and click the green button.
+
+name: 04 - Build & convert
+
+on:
+  workflow_dispatch:
+    inputs:                           # form fields shown in the "Run workflow" dialog
+      temperature:
+        description: "Temperature to convert"
+        required: true
+        default: "100"
+      to:
+        description: "Convert to"
+        type: choice
+        options: ["f", "c"]
+        default: "f"
+
+# Environment variables available to every step of every job.
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    # Job outputs let later jobs read values produced here.
+    outputs:
+      result: ${{ steps.run-cli.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e .
+
+      # Step outputs: write "name=value" to the $GITHUB_OUTPUT file.
+      # Inputs are passed through env vars (not pasted into the script) so a
+      # malicious input can't inject shell commands.
+      - name: Run the converter
+        id: run-cli
+        env:
+          TEMPERATURE: ${{ inputs.temperature }}
+          TO_UNIT: ${{ inputs.to }}
+        run: |
+          RESULT=$(python -m tempconv.cli "$TEMPERATURE" --to "$TO_UNIT")
+          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
+
+      # Markdown written to $GITHUB_STEP_SUMMARY appears on the run's summary page.
+      - name: Write a job summary
+        env:
+          TEMPERATURE: ${{ inputs.temperature }}
+          RESULT: ${{ steps.run-cli.outputs.result }}
+        run: |
+          echo "### 🌡️ Conversion result" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$TEMPERATURE\` → **$RESULT**" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: convert
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Read the previous job's output
+        env:
+          RESULT: ${{ needs.convert.outputs.result }}
+        run: echo "The convert job produced $RESULT"
+      - name: Build the package
+        run: |
+          pip install build
+          python -m build
+          ls -l dist/
+      # Artifacts are files saved from a run; download them from the run page.
+      - name: Upload the built package
+        uses: actions/upload-artifact@v7
+        with:
+          name: tempconv-dist
+          path: dist/
+          retention-days: 7
