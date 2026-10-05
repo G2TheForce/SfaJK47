@@ -1,0 +1,22 @@
+[project]
+name = "tempconv"
+version = "0.1.0"
+description = "A tiny temperature converter used to learn GitHub Actions"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
