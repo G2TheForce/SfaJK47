@@ -1,0 +1,33 @@
+# LESSON 2: real Continuous Integration (CI).
+# Goal: every push and pull request automatically runs the test suite.
+# If a test fails, the run turns red and the commit/PR shows a ❌.
+
+name: 02 - Run tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      # setup-python installs a specific Python version on the runner.
+      # "with:" passes inputs to an action.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Same commands you would type locally (see README).
+      - name: Install the project and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      # If any command exits with a non-zero code, the step fails and the job stops.
+      - name: Run tests
+        run: pytest -v
